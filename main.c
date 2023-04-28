@@ -3,6 +3,13 @@
 
 #include "Tests.h"
 
+//static void testOne();
+//static void testTwo();
+//static void testThree();
+//static void testFour();
+////static void testFive();
+//static void testSix();
+
 int main() {
 
 testOne();
