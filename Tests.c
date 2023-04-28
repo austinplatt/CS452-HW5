@@ -169,7 +169,7 @@ deq_tail_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_tail_put(q, ptr2);
-char *str = deq_to_str(q);
+const char *str = deq_str(q,0);
 char *expectedStr = "[1, 2]";
 if (strcmp(str, expectedStr) == 0) {
 printf("Pass: Deq to string\n");
