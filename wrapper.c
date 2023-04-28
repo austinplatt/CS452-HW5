@@ -5,7 +5,7 @@
 static Balloc bp=0;
 
 extern void *malloc(size_t size) {
-  bp=bp ? bp : bnew(4096,4,12);
+  bp=bp ? bp : bnew(4096,4,10);
   return balloc(bp,size);
 }
 

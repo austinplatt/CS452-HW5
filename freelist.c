@@ -8,17 +8,25 @@
 #define MAX_LEVELS 20
 #include "bitmap.h"
 
+// Struct to hold freelists
 typedef struct{
     void* head;
     BitMap map;
 }FreeListSpace;
 
+// Struct to access first 8 bits of a free block
 typedef struct{
     void* next;
 }FreeBlock;
 
 static FreeListSpace list[20];
 
+// <summary>Initializes a new freelist</summary>
+// <param name = "size">Size of the initial map</param>
+// <param name = "base">Base address mmap</param>
+// <param name = "l">Low end</param>
+// <param name = "u">High end</param>
+// <returns>A void* to a allocated freelist</returns>
 extern FreeList freelistnew(unsigned int size, void* base, int l, int u){
     int numLists = u-l;
     
@@ -47,6 +55,12 @@ extern FreeList freelistnew(unsigned int size, void* base, int l, int u){
     return (FreeList)list;
 }
 
+// <summary>Splits a block to the level specified</summary>
+// <param name = "base">base address returned by mmap</param>
+// <param name = "mem">Block to split</param>
+// <param name = "sLevel">Level that we started searching from</param>
+// <param name = "currLevel">Iteration level we are on</param>
+// <param name = "offset">array offset from e</param>
 static void splitToLevel(FreeList f, void *base, void* mem, int sLevel, int currLevel, int offset){
     FreeListSpace *rep = (FreeListSpace *)f;
     FreeBlock* buddy = NULL;
@@ -59,6 +73,12 @@ static void splitToLevel(FreeList f, void *base, void* mem, int sLevel, int curr
     }
 }
 
+// <summary>Splits a block to the level on init</summary>
+// <param name = "base">base address returned by mmap</param>
+// <param name = "mem">Block to split</param>
+// <param name = "i">Iteration level we are on</param>
+// <param name = "u">Upper bound</param>
+// <param name = "l">Lower bound</param>
 static void split(FreeList f, void *base, void* mem, int i, int deltaE, int u, int l){
     void* buddy = buddyinv(base, mem, u + deltaE -i -1);
     while(deltaE/2 > i){
@@ -69,6 +89,10 @@ static void split(FreeList f, void *base, void* mem, int i, int deltaE, int u, i
     updateHead(f, buddy, u-l);
 }
 
+// <summary>Swaps head with a new chunk of memory</summary>
+// <param name = "f">Free list</param>
+// <param name = "mem">Memory to be new head</param>
+// <param name = "index">Index of array to swap</param>
 static void updateHead(FreeList f, void* mem, int index){
     FreeListSpace *rep = (FreeListSpace *)f;
     void* currentHead = rep[index].head;
@@ -78,6 +102,12 @@ static void updateHead(FreeList f, void* mem, int index){
     rep[index].head = memRep;
 }
 
+// <summary>Allocates block from freelist</summary>
+// <param name = "base">base address returned by mmap</param>
+// <param name = "e">Order</param>
+// <param name = "l">lower level</param>
+// <param name = "u">upper level</param>
+// <returns>Address of the allocated block</returns>
 extern void *freelistalloc(FreeList f, void *base, int e, int l, int u){
     FreeListSpace *rep = (FreeListSpace *)f;
     
@@ -112,6 +142,8 @@ extern void *freelistalloc(FreeList f, void *base, int e, int l, int u){
     return allocatedAddress;
 }
 
+// <summary>Prints a node</summary>
+// <param name = "node">Address of block/node to print</param>
 extern void printNode(void* node){
   FreeBlock* next = (FreeBlock*)node;
   while(next != NULL){
@@ -120,6 +152,11 @@ extern void printNode(void* node){
   }
 }
 
+// <summary>Frees a block of memory and returns it to the freelist</summary>
+// <param name = "base">base address returned by mmap</param>
+// <param name = "mem">Block to split</param>
+// <param name = "e">Order</param>
+// <param name = "l">Lower level</param>
 extern void freelistfree(FreeList f, void *base, void *mem, int e, int l){
     FreeListSpace* level = (FreeListSpace*) &list[e-l];
     
@@ -157,6 +194,12 @@ extern void freelistfree(FreeList f, void *base, void *mem, int e, int l){
     }
 }
 
+// <summary>Figures out side of an allocated block</summary>
+// <param name = "base">base address returned by mmap</param>
+// <param name = "mem">Block to look up</param>
+// <param name = "l">lower level</param>
+// <param name = "u">upper level</param>
+// <returns>size of block</returns>
 extern int freelistsize(FreeList f, void *base, void *mem, int l, int u)
 {
     FreeListSpace *rep = (FreeListSpace *)f;  
@@ -175,6 +218,7 @@ extern int freelistsize(FreeList f, void *base, void *mem, int l, int u)
     return size;
 }
 
+// Prints free list
 extern void freelistprint(FreeList f, unsigned int size, int l, int u){
    FreeListSpace *rep = (FreeListSpace *)f;  
    int numLists = u-l;
