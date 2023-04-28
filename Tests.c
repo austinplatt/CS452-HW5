@@ -129,7 +129,8 @@ deq_head_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_head_put(q, ptr2);
-if (deq_head_rem(q) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
+if (deq_head_rem(&q) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
+
 printf("Pass: Deq head remove\n");
 } else {
 printf("Fail: Deq head remove\n");
@@ -148,7 +149,8 @@ deq_tail_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_tail_put(q, ptr2);
-if (deq_tail_rem(q) == ptr2 && deq_len(q) == 1 && deq_tail_get(q) == ptr1) {
+if (deq_head_rem(&q) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
+
 printf("Pass: Deq tail remove\n");
 } else {
 printf("Fail: Deq tail remove\n");
