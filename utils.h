@@ -1,5 +1,6 @@
 #ifndef UTILS_H
 #define UTILS_H
+#include <stddef.h>
 
 extern void *mmalloc(size_t size);
 

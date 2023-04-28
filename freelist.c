@@ -1,230 +1,159 @@
+#include <sys/mman.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <string.h>
 #include "utils.h"
-
+#include "error.h"
 #include "freelist.h"
-#include "utils.h"
-#define MAX_LEVELS 20
-#include "bitmap.h"
+typedef struct FreeListNode{
+    void* freeAddress; //List of free blocks at this level
+    int e; //Order of magnitude of the level, definitely necessary to maintain sizes
+    struct FreeListNode* next; //Link of nodes
+} *FreeListNode;
 
-// Struct to hold freelists
-typedef struct{
-    void* head;
-    BitMap map;
-}FreeListSpace;
+typedef struct {
+    FreeListNode first;
+} FreeListRep;
 
-// Struct to access first 8 bits of a free block
-typedef struct{
-    void* next;
-}FreeBlock;
 
-static FreeListSpace list[20];
 
-// <summary>Initializes a new freelist</summary>
-// <param name = "size">Size of the initial map</param>
-// <param name = "base">Base address mmap</param>
-// <param name = "l">Low end</param>
-// <param name = "u">High end</param>
-// <returns>A void* to a allocated freelist</returns>
+//Merging is just check if address is on freelist, if so, remove both of them from that freelist and then add the item to the higher order freelist and run merge again on the newly added buddy
+
 extern FreeList freelistnew(unsigned int size, void* base, int l, int u){
-    int numLists = u-l;
-    
-    memset(&list, 0, sizeof(FreeListSpace) *numLists);
-
-    // Allocates each level a bitmap
-    for(int i =0; i <= numLists; i++){
-        int levelSize = size2e(i + l);
-        int levelE = e2size(levelSize);
-        list[i].map = bitmapnew(levelE, levelSize);
+    FreeList fl = (FreeList)mmalloc(sizeof(FreeListRep));
+    FreeListRep* flr = (FreeListRep*)fl;
+    flr->first = NULL; //This ensures that our print statement works as intended
+    if(size == 0)
+        return fl;
+    for(int i = 0; i < size/e2size(u); i++){
+        FreeListNode newBlock = (FreeListNode)mmalloc(sizeof(struct FreeListNode));
+        newBlock->e = u;
+        newBlock->freeAddress = base + i*e2size(u);
+        newBlock->next = flr->first;
+        flr->first = newBlock;
     }
-
-    int totalE = size2e(size);
-    // Difference between u and acutal size of block
-    int deltaE = totalE - u;
-
-    // If we have same u as size
-    if(!deltaE){
-        list[numLists].head = base;
-    }
-    // If we have less u than size we need to split up blocks initially
-    else{
-       split(list, base, base, 0, deltaE, u, l );
-       updateHead(list, base, numLists);
-    }
-    return (FreeList)list;
+    return fl;
 }
+//Free area array
+/*
+typedef struct {
+    FreeList fl
+    BitMap
+} free_area
 
-// <summary>Splits a block to the level specified</summary>
-// <param name = "base">base address returned by mmap</param>
-// <param name = "mem">Block to split</param>
-// <param name = "sLevel">Level that we started searching from</param>
-// <param name = "currLevel">Iteration level we are on</param>
-// <param name = "offset">array offset from e</param>
-static void splitToLevel(FreeList f, void *base, void* mem, int sLevel, int currLevel, int offset){
-    FreeListSpace *rep = (FreeListSpace *)f;
-    FreeBlock* buddy = NULL;
-    while(currLevel > sLevel){
-        void* buddy = buddyinv(base, mem, (offset + currLevel - 1));
-        if(!bitmaptst(rep[currLevel].map, base, buddy, (offset+ currLevel - 1))){
-            updateHead(f, buddy, currLevel-1);
-        }
-        currLevel--;
+free_area[u-l];
+
+fl->first
+*/
+
+//Inside of this, we will break down our free blocks into smaller free blocks to match the requested size best
+//We do this utilizing flags from the freelistalloc function to determine what the correct action is
+//returning (void*)-1 means that the block at a certain order was not available, check in a higher order for a free block
+//returning (void*)-2 means that we split a higher order block, and need to check a lower order freelist again to either split or allocate a block to the user
+//Returning an address from freelistalloc means that a block was allocated and needs to be returned to the user
+extern void *freelistalloc(FreeList f, void *base, unsigned int size, int bypassSizeCheck){
+    FreeListRep* flr = (FreeListRep*)f;
+    if(flr->first == NULL){
+        fprintf(stderr, "No blocks in this level");
+        ERROR("Issues");
     }
-}
-
-// <summary>Splits a block to the level on init</summary>
-// <param name = "base">base address returned by mmap</param>
-// <param name = "mem">Block to split</param>
-// <param name = "i">Iteration level we are on</param>
-// <param name = "u">Upper bound</param>
-// <param name = "l">Lower bound</param>
-static void split(FreeList f, void *base, void* mem, int i, int deltaE, int u, int l){
-    void* buddy = buddyinv(base, mem, u + deltaE -i -1);
-    while(deltaE/2 > i){
-        split(f, base, mem, i+1, deltaE, u, l);
-        split(f, base, buddy, i+1, deltaE, u, l);
-        i++;
+    if(e2size(flr->first->e) < size){ //Should never hit this, but this is for debugging purposes
+        ERROR("Blocks are wrong size, check logic because this might indicate that we're splitting too much");
     }
-    updateHead(f, buddy, u-l);
-}
 
-// <summary>Swaps head with a new chunk of memory</summary>
-// <param name = "f">Free list</param>
-// <param name = "mem">Memory to be new head</param>
-// <param name = "index">Index of array to swap</param>
-static void updateHead(FreeList f, void* mem, int index){
-    FreeListSpace *rep = (FreeListSpace *)f;
-    void* currentHead = rep[index].head;
-    FreeBlock* memRep = (FreeBlock*)mem;
-
-    memRep->next = currentHead;
-    rep[index].head = memRep;
-}
-
-// <summary>Allocates block from freelist</summary>
-// <param name = "base">base address returned by mmap</param>
-// <param name = "e">Order</param>
-// <param name = "l">lower level</param>
-// <param name = "u">upper level</param>
-// <returns>Address of the allocated block</returns>
-extern void *freelistalloc(FreeList f, void *base, int e, int l, int u){
-    FreeListSpace *rep = (FreeListSpace *)f;
-    
-    void *allocatedAddress = NULL;
-
-    // Calculates offsets
-    int startLevel = e - l;
-    int endLevel = u - l;
-    int index = startLevel;
-
-    FreeListSpace currSpace = rep[startLevel];
-    
-    // We need u so we know if we don't have enough memory to return to user
-    while (currSpace.head == NULL && index <= endLevel)
-    {
-        currSpace = rep[index];
-        index++;
+    //Too much space at this level, need to split. Send the flag back to balloc for consumption
+    if(e2size(flr->first->e) >= 2*size && !bypassSizeCheck){ //If we're at the bottom of the free_area array, we need to allocate a block regardless of if it's way too big
+        return (void*)-2;
     }
-    // Figures out what index we found the block at
-    int foundIndex = startLevel == index ? startLevel : index - 1;
-    allocatedAddress = currSpace.head;
+    //GOOD TO GO. Size is right, order is right. Have blocks in the order. Remove the first block from the free list and give the memory address back to the user;
+    void* retAddress = flr->first->freeAddress;
+    FreeListNode nodeToFree = flr->first;
+    flr->first = nodeToFree->next;
+    munmap(nodeToFree, sizeof(struct FreeListNode));
+    nodeToFree = 0; //0 out pointer after freeing
+    return retAddress;
 
-    if (foundIndex > startLevel && rep[foundIndex].head != NULL)
-    {
-        // Splits block if needed
-        splitToLevel(f, base, allocatedAddress, startLevel, foundIndex, l);
-    }
-    // Sets bitmap so we can figure out size
-    bitmapset(rep[startLevel].map, base, allocatedAddress, e);
-    FreeBlock *initialBlock = rep[foundIndex].head;
-    rep[foundIndex].head = initialBlock->next;
-    return allocatedAddress;
 }
+//Freelist F has some stuff on it
+//We're at the highest order for elements. Only 1 block exists at this order
+//We need to split that block in half, store both buddies in the next lower-order freelist
+//Then we call return freelistalloc(f->lower, base, e, l);
 
-// <summary>Prints a node</summary>
-// <param name = "node">Address of block/node to print</param>
-extern void printNode(void* node){
-  FreeBlock* next = (FreeBlock*)node;
-  while(next != NULL){
-      printf("%p -> %p\n", next, next->next);
-      next = next->next;
-  }
-}
+// void* split(){
+// }
 
-// <summary>Frees a block of memory and returns it to the freelist</summary>
-// <param name = "base">base address returned by mmap</param>
-// <param name = "mem">Block to split</param>
-// <param name = "e">Order</param>
-// <param name = "l">Lower level</param>
+
 extern void freelistfree(FreeList f, void *base, void *mem, int e, int l){
-    FreeListSpace* level = (FreeListSpace*) &list[e-l];
-    
-    // Gets buddy
-    void* buddy = buddyinv(base, mem, e);
-    FreeBlock* nxtNode = (FreeBlock*)level->head;
-    FreeBlock* prevNode = NULL;
-
-    // Checks next nodes
-    while(nxtNode != NULL){
-        if(nxtNode == buddy){
-            break;
-        }
-        prevNode = nxtNode;
-        nxtNode = nxtNode->next;
-    }
-    if(nxtNode != NULL){
-        // Resets bit map for mem address
-        bitmapclr(level->map, base, mem, e);
-        if(nxtNode == level->head){
-            level->head = nxtNode->next;
-        }
-        else{
-            prevNode->next = nxtNode->next;
-        }
-        // Gets the base buddy
-        void* buddyBase = buddyclr(base, mem, e);
-        freelistfree(f, base, buddyBase, e+1, l);
-    }
-    else{
-        void* temp = level->head;
-        FreeBlock* memN = (FreeBlock*)mem;
-        memN->next = temp;
-        level->head = mem;
-    }
+    printf("FreeListFree is not yet implemented");
 }
 
-// <summary>Figures out side of an allocated block</summary>
-// <param name = "base">base address returned by mmap</param>
-// <param name = "mem">Block to look up</param>
-// <param name = "l">lower level</param>
-// <param name = "u">upper level</param>
-// <returns>size of block</returns>
-extern int freelistsize(FreeList f, void *base, void *mem, int l, int u)
-{
-    FreeListSpace *rep = (FreeListSpace *)f;  
-    int size = 0;
-    int numLists = u-l;
-    int counter = 0;
-
-    while(counter <= u){
-        int e = counter + l;
-        if(bitmaptst(rep[counter].map, base, mem, e)){
-            size = e2size(e);
-            break;
-        }
-        counter++;
-    }
-    return size;
+extern int freelistsize(FreeList f, void *base, void *mem, int l, int u){
+    printf("FreeListSize is not yet implemented");
+    return 0;
 }
 
-// Prints free list
-extern void freelistprint(FreeList f, unsigned int size, int l, int u){
-   FreeListSpace *rep = (FreeListSpace *)f;  
-   int numLists = u-l;
-   for(int i=0; i<=numLists; i++){
-       printf("Level: %d\n", i);
-       printNode(rep[i].head);
-       bitmapprint(rep[i].map, size, size2e(i+l));
-   }
+
+//Splits a block from inside the listToRemove and adds 2 new blocks inside listToAdd
+extern int freelistsplit(FreeList listToRemove, FreeList listToAdd){
+    FreeListRep* flToRemove = (FreeListRep*)listToRemove;
+    //Remove the node from the list
+    FreeListNode removedNode = flToRemove->first;
+    flToRemove->first = removedNode->next;
+    FreeListRep* flToAdd = (FreeListRep*)listToAdd;
+
+    //Create the 2 new blocks
+    FreeListNode newBlock1 = (FreeListNode)mmalloc(sizeof(struct FreeListNode));
+    FreeListNode newBlock2 = (FreeListNode)mmalloc(sizeof(struct FreeListNode));
+    if(newBlock1 == MAP_FAILED || newBlock2 == MAP_FAILED){
+        ERROR("Unable to mmalloc the new blocks");
+        return -1;
+    }
+    //Set the properties on the new blocks
+    newBlock1->freeAddress = removedNode->freeAddress;
+    newBlock1->e = removedNode->e-1; //The way the free_area structure has been created, this will never result in an exponent less than 3. Which prevents issues of minimum size being too low
+    newBlock2->freeAddress = removedNode->freeAddress+e2size(newBlock1->e); //Set the address start to the original free address + an offset of the size of the block
+    newBlock2->e = removedNode->e-1;
+    //Add the blocks to the freeList
+    newBlock1->next = newBlock2;
+    newBlock2->next = flToAdd->first;
+    flToAdd->first=newBlock1;
+
+    //Finally remove the removed node from memory
+    if(munmap(removedNode, sizeof(struct FreeListNode)) == -1){
+        ERROR("Unable to free split node");
+        return -1;
+    }
+    removedNode = NULL; //Null out the pointer after freeing
+    return 0;
+
+}
+
+//Returns the size of blocks at a certain level
+extern int freelistsizeofblocks(FreeList f){
+    FreeListRep* flr = (FreeListRep*)f;
+    if(flr == NULL){
+        return 0;
+    }
+    FreeListNode node = flr->first;
+    if(node == NULL)
+        return 0; //Designated flag to say that there isn't anything in this level
+    return e2size(node->e); //Return size for comparison against requested size in balloc
+}
+
+//extern void freelistprint(FreeList f, unsigned int size, int l, int u){
+//Print out the list at a certain level
+extern void freelistprint(FreeList f, int orderLevel){
+    FreeListRep* flr = (FreeListRep*)f;
+    if(flr == NULL || flr->first == NULL){
+        printf("Amount of free blocks in Order %d: %d\n", orderLevel, 0);
+        return;
+    }
+    FreeListNode node = flr->first;
+    int count = 0;
+    //Loop through all the nodes in this level of freelist and count them
+    while(node != NULL){
+        count++;
+        node = node->next;
+    }
+    //Print amount of items at a certain order level
+    printf("Amount of free blocks in Order %d: %d\n", orderLevel, count);
+    printf("Size of blocks at Order %d: %d bytes\n", orderLevel, e2size(flr->first->e));
 }

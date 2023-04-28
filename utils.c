@@ -1,91 +1,57 @@
-#define _GNU_SOURCE
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
+#include <stddef.h>
 #include <sys/mman.h>
+#include "utils.h"
 #include <math.h>
 
-#include "utils.h"
-#include "error.h"
-
-//<summary>Returns an address in the virtual address space of specified size</summary>
-//<param>Size: The size of memory to return</param>
-//<returns>address of the virtual memory</returns>
-extern void* mmalloc(size_t size){
-   void* mapMemory;
-   mapMemory=mmap(NULL, size, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE| MAP_ANONYMOUS, -1, 0);
-
-   if(mapMemory == MAP_FAILED)
-    ERROR("Mmap failed!");
-
-   return mapMemory;
-
+//Wrapper around mmap that takes the same parameters as malloc(), just without using malloc itself
+extern void *mmalloc(size_t size){
+    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
 }
 
-// Gets the size representation for e
+//exponent to size
+//Returns 2^e
 extern unsigned int e2size(int e){
-    return 1 << e;
+    return pow(2.0, (double)e); 
 }
-
-// Gets the e representation for size
+//returns log base 2 of size
 extern int size2e(unsigned int size){
-    return ceil(log(size)/log(2));
+    return log2(size);
 }
 
-// Sets a bit
 extern void bitset(unsigned char *p, int bit){
-    unsigned char mask = 1 << bit;
-    *p |= mask;
+    *p = bit;
 }
-
-// Clears a bit
 extern void bitclr(unsigned char *p, int bit){
-    unsigned char mask = ~(1 << bit);
-    *p &= mask;
-
+    *p &= 0; // 1 & 0   0 & 0
 }
-
-// Inverts a bit
 extern void bitinv(unsigned char *p, int bit){
-    unsigned char mask = 1 << bit;
-    *p^=mask;
-
+    *p = ~*p;
 }
-
-// Tests a bit
 extern int bittst(unsigned char *p, int bit){
-    return (*p >> bit) & (1);
+    return *p == bit;
 }
 
-// Sets the bit to retrieve buddy
+
 extern void *buddyset(void *base, void *mem, int e){
-    unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
-    unsigned long mask = 1 << e;
-    memoryInt|=mask;
-    return base + memoryInt;
-
+    return NULL;
 }
 
-// clears a bit to retrieve buddy
 extern void *buddyclr(void *base, void *mem, int e){
-    unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
-    unsigned long mask = ~(1 << e);
-    memoryInt&=mask;
-    return base + memoryInt;
+    //WHAT IS THE E IN ALL OF THESE FUNCTIONS USED FOR
+    //IT CAN'T BE FOR BITMAPS SINCE THERE'S NO BITMAP HERE
+
+    //HOW MANY BITMAPS DO WE NEED. ALL OF THE WHITEPAPERS SAID ONE PER LEVEL BUT WITH THE E IT SEEMS LIKE IT'S JUST 1 BIG ONE
+
+    //WHAT THE HECK IS THE FREELIST
+    return NULL;
 }
 
-// Inverts a bit to retrive left/right buddy
+//The e passed in is left shifted by e in order to find the left buddy of the pair
 extern void *buddyinv(void *base, void *mem, int e){
-    unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
-    unsigned long mask = 1 << e;
-    memoryInt^=mask;
-    return base + memoryInt;
-
+    return NULL;
 }
 
-// Tests bit of a buddy
+
 extern int buddytst(void *base, void *mem, int e){
-    unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
-    memoryInt = (memoryInt >> e) & 1;
-    return memoryInt;
+    return 0;
 }
