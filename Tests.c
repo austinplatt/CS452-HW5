@@ -4,31 +4,6 @@
 
 #include "deq.h"
 
-static void testDeqConstructor();
-static void testDeqHeadPut();
-static void testDeqTailPut();
-static void testDeqHeadGet();
-static void testDeqTailGet();
-static void testDeqHeadRem();
-static void testDeqTailRem();
-static void testDeqToString();
-
-/*
- * Main function that runs all the test cases
- */
-int main() {
-  testDeqConstructor();
-  testDeqHeadPut();
-  testDeqTailPut();
-  testDeqHeadGet();
-  testDeqTailGet();
-  testDeqHeadRem();
-  testDeqTailRem();
-  testDeqToString();
-  printf("All tests passed!\n");
-  return 0;
-}
-
 /*
  * This is a test case for Deq constructor
  */
