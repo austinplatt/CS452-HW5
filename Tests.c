@@ -129,7 +129,7 @@ deq_head_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_head_put(q, ptr2);
-if (deq_head_rem(&q) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
+if (deq_head_rem(q,0) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
 
 printf("Pass: Deq head remove\n");
 } else {
@@ -149,7 +149,7 @@ deq_tail_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_tail_put(q, ptr2);
-if (deq_head_rem(&q) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
+if (deq_head_rem(q,0) == ptr2 && deq_len(q) == 1 && deq_head_get(q) == ptr1) {
 
 printf("Pass: Deq tail remove\n");
 } else {
@@ -169,7 +169,7 @@ deq_tail_put(q, ptr1);
 int num2 = 2;
 int *ptr2 = &num2;
 deq_tail_put(q, ptr2);
-char *str = deq_to_string(q);
+char *str = deq_to_str(q);
 char *expectedStr = "[1, 2]";
 if (strcmp(str, expectedStr) == 0) {
 printf("Pass: Deq to string\n");
