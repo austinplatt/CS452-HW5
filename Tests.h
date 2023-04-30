@@ -12,3 +12,14 @@ void testDeqTailGet();
 void testDeqHeadRem();
 void testDeqTailRem();
 void testDeqToString();
+
+static void runTests() {
+  testDeqConstructor();
+  testDeqHeadPut();
+  testDeqTailPut();
+  testDeqHeadGet();
+  testDeqTailGet();
+  testDeqHeadRem();
+  testDeqTailRem();
+  testDeqToString();
+}
