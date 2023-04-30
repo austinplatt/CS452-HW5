@@ -3,6 +3,16 @@
 
 #include "Tests.h"
 
+/* function declarations for test cases in tests.c */
+static void testDeqConstructor();
+static void testDeqHeadPut();
+static void testDeqTailPut();
+static void testDeqHeadGet();
+static void testDeqTailGet();
+static void testDeqHeadRem();
+static void testDeqTailRem();
+static void testDeqToString();
+
 /*
  * Main function that runs all the test cases
  */
