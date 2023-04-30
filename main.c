@@ -3,15 +3,6 @@
 
 #include "Tests.h"
 
-static void testDeqConstructor();
-static void testDeqHeadPut();
-static void testDeqTailPut();
-static void testDeqHeadGet();
-static void testDeqTailGet();
-static void testDeqHeadRem();
-static void testDeqTailRem();
-static void testDeqToString();
-
 /*
  * Main function that runs all the test cases
  */
@@ -27,6 +18,3 @@ int main() {
   printf("All tests passed!\n");
   return 0;
 }
-
-
-
