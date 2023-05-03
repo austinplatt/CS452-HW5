@@ -93,9 +93,15 @@ bool executeTest(Test testList) {
                 for (int j = i - 1; j >= 0; j--) {
                     struct TestStep* currentStep = *((testList->steps) + j);
 
-                    if (*(currentStep->data) == searchVal) {
-                        functionAddress = currentStep->data;
-                        break;
+                    switch (currentStep->type) {
+                        case PUT:
+                        case GET:
+                        case ith:
+                            if (*(currentStep->data) == searchVal) {
+                                functionAddress = currentStep->data;
+                                break;
+                            }
+                            break;
                     }
                 }
 
