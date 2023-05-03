@@ -268,7 +268,7 @@ bool Test_Get_Head_EmptyList()
     TestType types[] = {GET};
     End end[] = {Head};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -283,7 +283,7 @@ bool Test_Get_Tail_EmptyList()
     TestType types[] = {GET};
     End end[] = {Tail};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -299,7 +299,7 @@ bool Test_Put_AddToHeadEmptyList()
     TestType types[] = {PUT};
     End end[] = {Head};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -314,7 +314,7 @@ bool Test_Put_AddToTailEmptyList()
     TestType types[] = {PUT};
     End end[] = {Tail};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -330,7 +330,7 @@ bool Test_Put_AddToHead2Item()
     TestType types[] = {PUT, PUT};
     End end[] = {Head, Head};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -345,7 +345,7 @@ bool Test_Put_Add2Tail()
     TestType types[] = {PUT, PUT};
     End end[] = {Tail, Tail};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -362,7 +362,7 @@ bool Test_Put_Add2Tail1Head()
     TestType types[] = {PUT, PUT, PUT};
     End end[] = {Tail, Tail, Head};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
@@ -378,7 +378,7 @@ bool Test_Put_Add2Head1Tail()
     TestType types[] = {PUT, PUT, PUT};
     End end[] = {Head, Head, Tail};
 
-    Test test = makeTest(types, end, data, expected, stepCount);
+    Test test = MakeTest(types, end, data, expected, stepCount);
     return executeTest(test);
 }
 
