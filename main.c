@@ -7,21 +7,21 @@
 
 int main() {
 
-   // Head put tests
+   //Head put tests
    Test_Put_AddToHeadEmptyList();
    Test_Put_AddToHead2Item();
 
-   // Tail put tests
+   //Tail put tests
    Test_Put_AddToTailEmptyList();
    Test_Put_Add2Tail();
 
-   // Mixed Put tests
+   //Tail/Head Put tests
    Test_Put_Add2Tail1Head();
 
-   // Get Head tests
+   //Get Head tests
    Test_Get_Head_EmptyList();
 
 
-   // Get tail tests
+   //Get tail tests
    Test_Get_Tail_EmptyList();
 }

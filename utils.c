@@ -8,9 +8,9 @@
 #include "utils.h"
 #include "error.h"
 
-//<summary>Returns an address in the virtual address space of specified size</summary>
-//<param>Size: The size of memory to return</param>
-//<returns>address of the virtual memory</returns>
+/**
+ * Function that returns a virtual address space address with the provided size.
+ */ 
 extern void* mmalloc(size_t size){
    void* mapMemory;
    mapMemory=mmap(NULL, size, PROT_EXEC | PROT_READ | PROT_WRITE, MAP_PRIVATE| MAP_ANONYMOUS, -1, 0);
@@ -21,43 +21,56 @@ extern void* mmalloc(size_t size){
    return mapMemory;
 
 }
-
-// Gets the size representation for e
+/**
+ * Function that obtains e's size representation.
+ */ 
 extern unsigned int e2size(int e){
     return 1 << e;
 }
 
-// Gets the e representation for size
+/**
+ * Function that gets e's size representation.
+ */ 
 extern int size2e(unsigned int size){
     return ceil(log(size)/log(2));
 }
 
-// Sets a bit
+/**
+ * Function that sets the bit
+ */ 
 extern void bitset(unsigned char *p, int bit){
     unsigned char mask = 1 << bit;
     *p |= mask;
 }
 
-// Clears a bit
+/**
+ * Function that clears the bit
+ */
 extern void bitclr(unsigned char *p, int bit){
     unsigned char mask = ~(1 << bit);
     *p &= mask;
 
 }
 
-// Inverts a bit
+/**
+ * Function that inverts the bit
+ */
 extern void bitinv(unsigned char *p, int bit){
     unsigned char mask = 1 << bit;
     *p^=mask;
 
 }
 
-// Tests a bit
+/**
+ * Function that tests the bit
+ */
 extern int bittst(unsigned char *p, int bit){
     return (*p >> bit) & (1);
 }
 
-// Sets the bit to retrieve buddy
+/**
+ * Function that sets the bit to retrieve buddy
+ */
 extern void *buddyset(void *base, void *mem, int e){
     unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
     unsigned long mask = 1 << e;
@@ -66,7 +79,9 @@ extern void *buddyset(void *base, void *mem, int e){
 
 }
 
-// clears a bit to retrieve buddy
+/**
+ * Function that clears the bit to retrieve buddy
+ */
 extern void *buddyclr(void *base, void *mem, int e){
     unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
     unsigned long mask = ~(1 << e);
@@ -74,7 +89,9 @@ extern void *buddyclr(void *base, void *mem, int e){
     return base + memoryInt;
 }
 
-// Inverts a bit to retrive left/right buddy
+/**
+ * Function that inverts the bit to retrieve both the left and right buddy
+ */
 extern void *buddyinv(void *base, void *mem, int e){
     unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
     unsigned long mask = 1 << e;
@@ -83,7 +100,9 @@ extern void *buddyinv(void *base, void *mem, int e){
 
 }
 
-// Tests bit of a buddy
+/**
+ * Function that tests the bit of buddy
+ */
 extern int buddytst(void *base, void *mem, int e){
     unsigned long memoryInt = (unsigned long)mem - (unsigned long)base;
     memoryInt = (memoryInt >> e) & 1;
