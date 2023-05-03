@@ -275,8 +275,8 @@ bool Test_Put_AddToHeadEmptyList()
     TestType types[] = {PUT};
     End end[] = {Head};
 
-    Test test = GenerateTest(types, end, data, expected, stepCount);
-    return runTest(test);
+    Test test = makeTest(types, end, data, expected, stepCount);
+    return executeTest(test);
 }
 
 // Tests adding an item to the tail of an empty list
@@ -290,8 +290,8 @@ bool Test_Put_AddToTailEmptyList()
     TestType types[] = {PUT};
     End end[] = {Tail};
 
-    Test test = GenerateTest(types, end, data, expected, stepCount);
-    return runTest(test);
+    Test test = makeTest(types, end, data, expected, stepCount);
+    return executeTest(test);
 }
 
 // Tests putting two items at the head of the list
@@ -306,8 +306,8 @@ bool Test_Put_AddToHead2Item()
     TestType types[] = {PUT, PUT};
     End end[] = {Head, Head};
 
-    Test test = GenerateTest(types, end, data, expected, stepCount);
-    return runTest(test);
+    Test test = makeTest(types, end, data, expected, stepCount);
+    return executeTest(test);
 }
 
 // Tests putting two items at the tail of the empty list
@@ -321,8 +321,8 @@ bool Test_Put_Add2Tail()
     TestType types[] = {PUT, PUT};
     End end[] = {Tail, Tail};
 
-    Test test = GenerateTest(types, end, data, expected, stepCount);
-    return runTest(test);
+    Test test = makeTest(types, end, data, expected, stepCount);
+    return executeTest(test);
 }
 
 
@@ -338,8 +338,8 @@ bool Test_Put_Add2Tail1Head()
     TestType types[] = {PUT, PUT, PUT};
     End end[] = {Tail, Tail, Head};
 
-    Test test = GenerateTest(types, end, data, expected, stepCount);
-    return runTest(test);
+    Test test = makeTest(types, end, data, expected, stepCount);
+    return executeTest(test);
 }
 
 // Tests adding two items to the head and then 1 to the tail
