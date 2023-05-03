@@ -24,10 +24,6 @@ extern void free(void *ptr) {
 }
 //Implements the min function to get the minimum of two sizes.
 size_t min(size_t x, size_t y) { return x<y ? x : y; } 
-
-/**
- * Implements the standard C library function realloc using balloc and bfree.
- */ 
 extern void *realloc(void *ptr, size_t size) {
   //Allocate memory from the pool using malloc.
   void *new=malloc(size);
