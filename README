@@ -1,0 +1,22 @@
+**************************
+* Homework #4: Driversity
+* CS452 Spring 2022
+* 4/18/23
+* Austin Platt
+**************************
+
+OVERVIEW:
+
+The goal of the homework assignment was to develop a memory allocator using the Buddy System scheme, which is similar to the kmalloc() allocator of the Linux kernel or the malloc() allocator of the C library. The allocator module's interface includes functions to construct a new allocator, allocate memory, deallocate memory, return the size of an allocation, and write a textual representation of an allocator to stdout for debugging.  
+
+COMPLILING AND RUNNING:
+
+To run this, you open up a terminal and locate the CS452 directory with the CS452-hw5 sub-directory in it. You then type "make" to automate file compilation and you will then type "./hw5" to run the program. To run Valgrind, you type "valgrind --leak-check=yes TryScanner". 
+
+ERRORS:
+
+There are several errors that occured when developing this a memory allocator. One error I encountered was incorrect memory management, which lead to memory leaks and a segmentation fault. I learned that if memory is not properly allocated and deallocated, blocks of memory could become inaccessible or unusable, leading to segmentation and wasted memory. Another issue I had was with the Buddy System algorithm's implementation. Although the Buddy System is a well-known memory management algorithm, it can still be challenging to implement and debug. Problems with managing the free lists, for instance, could include incorrectly adding or removing memory blocks from the appropriate list or incorrectly recognizing the size of a memory block. In the end, I could only get one of my tests to pass before it exited with a segmentation fault. 
+
+DISCUSSION:
+
+I am glad I had the chance to learn more about how operating systems handle memory allocation. I developed a better understanding of the difficulties associated with memory management in a system by building a memory allocator from scratch. I learned how to create modular, reusable code. The memory allocator must be user-friendly and well-designed because it will be utilized by other programs. Personally, this was the hardest assignment for me in this class. I tried using my tests from hw1 but they did not work so I tried creating new ones. I referred back to my CS221 assignments to implement some of the tests that we used then. I only got one test to pass but I am glad that it was compiling. 
