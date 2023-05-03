@@ -55,67 +55,73 @@ Test MakeTest(TestType *typeList, End *endList, int *dataList, char *expectedRes
 // <returns>True if test passed, false otherwise</returns>
 bool executeTest(Test testList) {
     Deq q = deq_new();
+    int *data[testList->count];
     bool passed = false;
 
     for (int i = 0; i < testList->count; i++) {
-        struct TestStep* step = *((testList->steps) + i);
+        struct TestStep *step = *(testList->steps + i);
+        int *stepData = step->data;
 
-        switch (step->type) {
-            case PUT:
-                if (step->end == Head) {
-                    deq_head_put(q, step->data);
-                } else {
-                    deq_tail_put(q, step->data);
-                }
-                break;
-            case GET:
-                if (step->end == Head) {
-                    Data d = deq_head_get(q);
-                    printReturn("Head get", d);
-                } else {
-                    Data d = deq_tail_get(q);
-                    printReturn("Tail get", d);
-                }
-                break;
-            case ith:
-                if (step->end == Head) {
-                    Data d = deq_head_ith(q, *(step->data));
-                    printReturn("Head ith", d);
-                } else {
-                    Data d = deq_tail_ith(q, *(step->data));
-                    printReturn("Tail ith", d);
-                }
-                break;
-            case REM:
-                int* functionAddress = step->data;
-                int searchVal = *functionAddress;
+        data[i] = stepData;
 
-                for (int j = i - 1; j >= 0; j--) {
-                    struct TestStep* currentStep = *((testList->steps) + j);
+        if (step->type == PUT) {
+            if (step->end == Head) {
+                deq_head_put(q, stepData);
+            } else {
+                deq_tail_put(q, stepData);
+            }
+        } else if (step->type == GET) {
+            Data d;
+            if (step->end == Head) {
+                d = deq_head_get(q);
+                printReturn("Head get", d);
+            } else {
+                d = deq_tail_get(q);
+                printReturn("Tail get", d);
+            }
+            if (d == NULL) {
+                return false;
+            }
+        } else if (step->type == ith) {
+            Data d;
+            if (step->end == Head) {
+                d = deq_head_ith(q, *stepData);
+                printReturn("Head ith", d);
+            } else {
+                d = deq_tail_ith(q, *stepData);
+                printReturn("Tail ith", d);
+            }
+            if (d == NULL) {
+                return false;
+            }
+        } else if (step->type == REM) {
+            int searchVal = *stepData;
+            int *functionAddress = NULL;
 
-                    switch (currentStep->type) {
-                        case PUT:
-                        case GET:
-                        case ith:
-                            if (*(currentStep->data) == searchVal) {
-                                functionAddress = currentStep->data;
-                                break;
-                            }
-                            break;
-                    }
-                }
+            for (int j = i - 1; j >= 0; j--) {
+                struct TestStep *prevStep = *(testList->steps + j);
 
-                if (step->end == Head) {
-                    Data d = deq_head_rem(q, functionAddress);
-                    printReturn("Head remove", d);
-                } else {
-                    Data d = deq_tail_rem(q, functionAddress);
-                    printReturn("Tail remove", d);
+                if (*prevStep->data == searchVal) {
+                    functionAddress = prevStep->data;
+                    break;
                 }
-                break;
-            default:
-                // ignore unknown step types
-                break;
+            }
+
+            if (functionAddress == NULL) {
+                return false;
+            }
+
+            Data d;
+            if (step->end == Head) {
+                d = deq_head_rem(q, functionAddress);
+                printReturn("Head remove", d);
+            } else {
+                d = deq_tail_rem(q, functionAddress);
+                printReturn("Tail remove", d);
+            }
+            if (d == NULL) {
+                return false;
+            }
         }
     }
 
@@ -124,16 +130,28 @@ bool executeTest(Test testList) {
 
     if (head == NULL || tail == NULL) {
         if (testList->expected == NULL) {
-            printf("PASSED: list was NULL with expected result NULL\n");
-            passed = true;
+            printf("%s", "PASSED: list was NULL with expected result NULL\n");
         } else {
-            fprintf(stderr, "Failed result was null when expected was %s", testList->expected);
+            fprintf(stderr, "%s%s", "Failed result was null when expected was", testList->expected);
         }
     } else {
-        char* actual = deq_str(q, printInt);
-        passed = compareEntireString(actual, testList->expected);
+        char *headString = printInt(head);
+        char *tailString = printInt(tail);
+
+        char headChar = headString[0];
+        char tailChar = tailString[0];
+
+        char expectedHead = testList->expected[0];
+        char expectedTail = testList->expected[strlen(testList->expected) - 1];
+
+        passed = checkHead(headChar, expectedHead);
+        passed = checkTail(tailChar, expectedTail) && passed;
+
+        char *actual = deq_str(q, printInt);
+        passed = compareEntireString(actual, testList->expected) && passed;
+
         if (passed) {
-            printf("PASSED\n");
+            printf("%s", "PASSED\n");
         } else {
             printf("FAILED\n");
         }
