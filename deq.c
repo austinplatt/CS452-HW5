@@ -6,283 +6,273 @@
 #include "error.h"
 
 // indices and size of array of node pointers
-typedef enum {Head,Tail,Ends} End;
+typedef enum
+{
+  Head,
+  Tail,
+  Ends
+} End;
 
-typedef struct Node {
-  struct Node *np[Ends];		// next/prev neighbors
+// Holds information about a node such as data and next/prev pointer
+typedef struct Node
+{
+  struct Node *np[Ends]; // next/prev neighbors
   Data data;
-} *Node;
+} * Node;
 
-typedef struct {
-  Node ht[Ends];			// head/tail nodes
+// Holds information about head/tail of data structure and length
+typedef struct
+{
+  Node ht[Ends]; // head/tail nodes
   int len;
-} *Rep;
+} * Rep;
 
-static Rep rep(Deq q) {
-  if (!q) ERROR("zero pointer");
+// Returns reference to the internal structure of Deq structure
+static Rep rep(Deq q)
+{
+  if (!q)
+    ERROR("zero pointer");
   return (Rep)q;
 }
 
-/**
- * This method serves the purpose of adding an item at the head or 
- * tail of a list and appending it to the beginning or end of the list.
- * @param r The list appending to
- * @param e head or tail types
- * @param d data that is being added
- * @return void
- * 
- */
-
-static void put(Rep r, End e, Data d) 
+// <summary>Adds an item to the data structure</summary>
+// <param name = "r">List structure</param>
+// <param name = "e">End to insert onto</param>
+// <param name = "d">The data to insert into the list</param>
+static void put(Rep r, End e, Data d)
 {
-  struct Node* newNode;
-  if (e == Head) 
-  {
-    newNode = (struct Node*)malloc(sizeof(struct Node));
-    if(newNode==NULL)
-    {
-      return;
-    }
-    memset(newNode, 0, sizeof(*newNode));
-    newNode->data = d;
-    if (r->len == 0) 
-    {
-      r->ht[Head] = newNode;
-      r->ht[Tail] = newNode;
-    } else 
-    {
-      struct Node* prevHead = r->ht[Head];
-      r->ht[Head] = newNode;
-      prevHead->np[Head] = newNode;
-      newNode->np[Tail] = prevHead;
-    }
-    r->len++;
+  // Allocates data for the node to be inserted.
+  Node node = malloc(sizeof(struct Node));
+  if(!node){
+    ERROR("Node failed to malloc");
   }
-  if(e == Tail)
+  memset(node->np, 0, sizeof(node->np));
+  memset(node, 0, sizeof(*node));
+  node->data = d;
+
+  // If there are no items in the data structure.
+  if (r->len == 0)
   {
-    newNode = (struct Node*)malloc(sizeof(struct Node*));
-    if(newNode==NULL)
-    {
-      return;
-    }
-    memset(newNode, 0, sizeof(*newNode));
-    newNode->data = d;
-    if (r->len == 0) 
-    {
-      r->ht[Tail] = newNode;
-      r->ht[Head] = newNode;
-    } else 
-    {
-      struct Node* prevTail = r->ht[Tail];
-      r->ht[Head] = newNode;
-      prevTail->np[Tail] = newNode;
-      newNode->np[Head] = prevTail;
-    }
-    r->len++;
+    // Sets head/tail to the newly added node.
+    r->ht[Head] = node;
+    r->ht[Tail] = node;
   }
-  //free(newNode);
+
+  // If there is one or more item in the list
+  else if (r->len >= 1)
+  {
+    // Get the end block
+    Node currentEnd = r->ht[e];
+
+    // Set head/tail to the added node
+    r->ht[e] = node;
+
+    // Get opposite of current end (If e is Head then opposite will be Tail)
+    End opposite = (e == Head ? Tail : Head);
+    // Set next/prev of the head/tail to the added node
+    currentEnd->np[e] = node;
+
+    // Set next/prev of the new node to the old tail/head.
+    node->np[opposite] = currentEnd;
+  }
+
+  r->len++;
 }
 
-/**
- * This method serves the purpose of maintaining the list's integrity 
- * while returning data from the intended index.
- * @param r list being parsed
- * @param e head or tail types
- * @param i index
- * @return data
- * 
- */
-
-static Data ith(Rep r, End e, int i) 
-{ 
-  if (i < 0 || i >= r->len) 
+// <summary>Gets an element at i th position in the data structure from head/tail</summary>
+// <param name = "r">List structure</param>
+// <param name = "e">Start search from head or tail</param>
+// <param name = "i">The index to return</param>
+// <returns>Data at specified index i</returns>
+static Data ith(Rep r, End e, int i)
+{
+  // Check for index out of bound
+  if (i < 0 || i > r->len - 1)
   {
-    printf("Index not found in list.\n");
-    return NULL;
+    return 0;
   }
-  struct Node* currentNode = r->ht[Head];
-  for (int j = 0; j != i; j++) 
+  // Get opposite of current end (If e is Head then opposite will be Tail)
+  End opposite = (e == Head ? Tail : Head);
+
+  Node currentNode = r->ht[e];
+
+  // Loops forward or backwards i indexes depending on opposites value
+  for (int j = 0; j < i; j++)
   {
-    if (e == Tail) 
-    {
-      currentNode = currentNode->np[Head];
-    } else if (e == Head) 
-    {
-      currentNode = currentNode->np[Tail];
-    }
+    currentNode = currentNode->np[opposite];
   }
   return currentNode->data;
 }
 
-/**
- * This method serves the purpose of removing a node from the 
- * beginning or end of the list.
- * @param r list that is appending
- * @param e head or tail type
- * @return data
- * 
- */
+// <summary>Removes specified data from the list</summary>
+// <param name = "r">List structure</param>
+// <param name = "e">Start search from head or tail</param>
+// <param name = "d">The data to remove</param>
+// <returns>The data at the removed node</returns>
+static Data rem(Rep r, End e, Data d)
+{
+  if (r->len > 0)
+  {
 
-static Data get(Rep r, End e)         
-{ 
-  if (r->len > 2) 
-  {
-    Data dr = r->ht[e]->data;
-    int i = 0;
-    if (e == Head) 
-    {
-      i = 1;
-    }
-    struct Node* rmlNode = r->ht[e]->np[i];
-    rmlNode->np[e] = NULL;
-    free(r->ht[e]);
-    r->ht[e] = rmlNode;
-    r->len = r->len - 1;
-    return dr;
-  }
-  if (r->len == 2) 
-  {
-    Data dr = r->ht[e]->data;
-    int i = 0;
-    if (e == Head) 
-    {
-      i = 1;
-    }
-    struct Node* rmlNode = r->ht[e]->np[i];
-    rmlNode->np[Head] = NULL;
-    rmlNode->np[Tail] = NULL;
-    free(r->ht[e]);
-    r->ht[Head] = rmlNode;
-    r->ht[Tail] = rmlNode;
-    r->len = r->len - 1;
-    return dr;
-  }
-  if (r->len == 1) 
-  {
-    struct Node* rwards = r->ht[e];
-    r->ht[Head] = NULL;
-    r->ht[Tail] = NULL;
-    free(r->ht[e]);
-    r->len = r->len - 1;
-    return rwards->data;
-  }
-  if (r->len == 0) 
-  {
-    printf("Error: Cannot remove from the Empty List.\n");
-    return NULL;
-  }
-  return 0;
-} 
+    // Gets start point/either head/tail
+    Node currentNode = r->ht[e];
 
-/**
- * This method serves the purpose of removing the data if it is 
- * found in the intended list.
- * @param r intended list
- * @param e head or tail types
- * @param d data that is found
- * @return data
- * 
- */
+    // Get opposite of current end (If e is Head then opposite will be Tail)
+    End opposite = (e == Head ? Tail : Head);
 
-static Data rem(Rep r, End e, Data d) 
-{ 
-  if(r->len==0)
-  {
-    printf("List is empty, data cannot be removed.\n");
-    return NULL;
-  }
-  Node position;
-  if(e==Tail)
-  {
-    position=r->ht[Tail];
-  }else if(e==Head)
-  {
-    position=r->ht[Head];
-  } else 
-  {
-    return NULL;
-  }
-  while(position != NULL)
-  {
-    if(position->data == d)
+    // While node is not null
+    while (currentNode)
     {
-      if(position==r->ht[Head])
+      // If the current node equals the data passed in
+      if (currentNode->data == d)
       {
-        return get(r,Head);
-      } else if(position==r->ht[Tail])
-      {
-        return get(r,Tail);
-      } else
-      {
-        Data rem_data=position->data;
-        Node prevNode = position->np[Head];
-        Node nextNode = position->np[Tail];
-        prevNode->np[Tail]=nextNode;
-        nextNode->np[Head]=prevNode;
-        free(position);
-        r->len=r->len-1;
-        return rem_data;
-      }
-    }else
-    {
-      if(position==r->ht[Head] || position==r->ht[Tail])
-      {
-        printf("List does not contain this data.\n");
-        return NULL;
-      } else
-      {
-        if(e==Tail)
+        // Gets reference to previous and next node pointers
+        Node prevNode = currentNode->np[Head];
+        Node nextNode = currentNode->np[Tail];
+
+        // If the previous node was not null
+        if (prevNode)
         {
-          position=position->np[Head];
-        } else if(e==Head)
-        {
-          position=position->np[Tail];
+          // Set previous node to point to the next node
+          prevNode->np[Tail] = nextNode;
         }
+
+        // If there is no previous node then update the head
+        else if (!prevNode && r->len > 1)
+        {
+          r->ht[Head] = nextNode;
+        }
+
+        // If only one item in the list set the head to NULL
+        else
+        {
+          r->ht[Head] = NULL;
+        }
+
+        // If there is a next node update pointer the previous node.
+        if (nextNode)
+        {
+          nextNode->np[Head] = prevNode;
+        }
+
+        // If there is not a next node and more than one elements left then tail is now nextNode.
+        else if (!nextNode && r->len > 1)
+        {
+          r->ht[Tail] = prevNode;
+        }
+
+        // If last element in list then tail should now be null
+        else
+        {
+          r->ht[Tail] = NULL;
+        }
+        r->len--;
+
+        // Save the data to return
+        Data returnData = currentNode->data;
+
+        // Free malloc'ed node data
+        free(currentNode);
+
+        return returnData;
       }
+
+      // If the node was not found increment currentNode back/forwards depending on value of e
+      currentNode = currentNode->np[opposite];
     }
   }
-return NULL;
+
+  return 0;
 }
 
-extern Deq deq_new() {
-  Rep r=(Rep)malloc(sizeof(*r));
-  if (!r) ERROR("malloc() failed");
-  r->ht[Head]=0;
-  r->ht[Tail]=0;
-  r->len=0;
+// <summary>Gets and removes item at the head/tail of the list</summary>
+// <param name = "r">List structure</param>
+// <param name = "e">The end to get from</param>
+// <returns>The data at either end of the list</returns>
+static Data get(Rep r, End e)
+{
+  if(r->len > 0){
+    // Gets the data at specified end
+    Data endData = r->ht[e]->data;
+    // Uses rem function to get and remove by passing the data at the head/tail
+    return rem(r, e, endData);
+  }
+  return 0;
+ 
+}
+
+// Initializes a new Deq structure
+extern Deq deq_new()
+{
+  Rep r = (Rep)malloc(sizeof(*r));
+  if (!r)
+    ERROR("malloc() failed");
+  r->ht[Head] = 0;
+  r->ht[Tail] = 0;
+  r->len = 0;
   return r;
 }
 
+// Returns length of the data structure
 extern int deq_len(Deq q) { return rep(q)->len; }
 
-extern void deq_head_put(Deq q, Data d) {        put(rep(q),Head,d); }
-extern Data deq_head_get(Deq q)         { return get(rep(q),Head); }
-extern Data deq_head_ith(Deq q, int i)  { return ith(rep(q),Head,i); }
-extern Data deq_head_rem(Deq q, Data d) { return rem(rep(q),Head,d); }
+// Puts data at the head of the structure
+extern void deq_head_put(Deq q, Data d) { put(rep(q), Head, d); }
 
-extern void deq_tail_put(Deq q, Data d) {        put(rep(q),Tail,d); }
-extern Data deq_tail_get(Deq q)         { return get(rep(q),Tail); }
-extern Data deq_tail_ith(Deq q, int i)  { return ith(rep(q),Tail,i); }
-extern Data deq_tail_rem(Deq q, Data d) { return rem(rep(q),Tail,d); }
+// Gets data at head of structure
+extern Data deq_head_get(Deq q) { return get(rep(q), Head); }
 
-extern void deq_map(Deq q, DeqMapF f) {
-  for (Node n=rep(q)->ht[Head]; n; n=n->np[Tail])
+// Gets ith object from head of structure
+extern Data deq_head_ith(Deq q, int i) { return ith(rep(q), Head, i); }
+
+// Removes specified d value starting search from head of structure
+extern Data deq_head_rem(Deq q, Data d) { return rem(rep(q), Head, d); }
+
+// Puts data at tail of structure
+extern void deq_tail_put(Deq q, Data d) { put(rep(q), Tail, d); }
+
+// Gets data at tail of structure
+extern Data deq_tail_get(Deq q) { return get(rep(q), Tail); }
+
+// Gets data at ith index starting index 0 at the tail of the structure
+extern Data deq_tail_ith(Deq q, int i) { return ith(rep(q), Tail, i); }
+
+// Removes specified data from structure starting search from tail
+extern Data deq_tail_rem(Deq q, Data d) { return rem(rep(q), Tail, d); }
+
+// <summary>Iterates through deq performing operation specified by function pointer</summary>
+// <param name = "q">Data structure</param>
+// <param name = "f">Pointer to function that performs operation on data</param>
+extern void deq_map(Deq q, DeqMapF f)
+{
+  for (Node n = rep(q)->ht[Head]; n; n = n->np[Tail])
     f(n->data);
 }
 
-extern void deq_del(Deq q, DeqMapF f) {
-  if (f) deq_map(q,f);
-  Node curr=rep(q)->ht[Head];
-  while (curr) {
-    Node next=curr->np[Tail];
+// <summary>Cleans up deq object and frees memory</summary>
+// <param name = "q">Reference to data structure to clean</param>
+// <param name = "f">Function to clear any structure that was malloced in the node's data</param>
+extern void deq_del(Deq q, DeqMapF f)
+{
+  if (f)
+    deq_map(q, f);
+  Node curr = rep(q)->ht[Head];
+  while (curr)
+  {
+    Node next = curr->np[Tail];
     free(curr);
-    curr=next;
+    curr = next;
   }
   free(q);
 }
 
-extern Str deq_str(Deq q, DeqStrF f) {
-  char *s=strdup("");
+// <summary>Converts the data structure to a string representation</summary>
+// <param name = "q">The data structure to print</param>
+// <param name = "f">Function pointer that specifies how a piece of data in a node should be converted to a string</param>
+// <returns>String representation of structure</returns>
+extern Str deq_str(Deq q, DeqStrF f)
+{
+   char *s=strdup("");
   for (Node n=rep(q)->ht[Head]; n; n=n->np[Tail]) {
     char *d=f ? f(n->data) : n->data;
     char *t; asprintf(&t,"%s%s%s",s,(*s ? " " : ""),d);
